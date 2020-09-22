@@ -39,13 +39,13 @@ async function getDepartments(companyIdentifier) {
  * @returns object.
  */
 const changeId = obj => {
-	const updatedObj = obj
-	updatedObj.id = updatedObj.id.toString()
-	return updatedObj
+  const updatedObj = obj
+  updatedObj.id = updatedObj.id.toString()
+  return updatedObj
 }
 
 exports.sourceNodes = async ({ boundActionCreators }, { companyIdentifier, pluginOptions }) => {
-	const { createNode } = boundActionCreators
+  const { createNode } = boundActionCreators
   const options = pluginOptions || {}
 
   console.log(`Starting to fetch data from Smart Recruiters`)
@@ -64,7 +64,7 @@ exports.sourceNodes = async ({ boundActionCreators }, { companyIdentifier, plugi
   return Promise.all(
     departments.map(async department => {
       const convertedDepartment = changeId(department)
-      
+
       let jobs
       try {
         const jobsForDepartmentResults = await getJobsForDepartment(companyIdentifier, convertedDepartment.id)
@@ -97,8 +97,79 @@ exports.sourceNodes = async ({ boundActionCreators }, { companyIdentifier, plugi
         })
         createNode(jobPostNode)
       })
-      
+
       createNode(departmentNode)
     })
   )
 }
+
+exports.createSchemaCustomization = ({ actions }) => {
+  const { createTypes } = actions;
+
+  createTypes(`
+    type SmartRecruitersJobPost implements Node {
+      id: ID!
+      uuid: String
+      name: String
+      refNumber: String
+      releasedDate: Date
+      ref: String
+      creator: SmartRecruitersEmployee
+      company: SmartRecruitersCompany
+      industry: SmartRecruitersIndustry
+      departent: SmartRecruitersDepartment
+      function: SmartRecruitersFunction
+      experienceLevel: SmartRecruitersExperienceLevel
+      typeOfEmployment: SmartRecruitersTypeOfEmployment
+      location: SmartRecruitersLocation
+      slug: String
+    }
+
+    type SmartRecruitersEmployee implements Node {
+      name: String
+      avatarUrl: String
+    }
+
+    type SmartRecruitersCompany implements Node {
+      id: ID!
+      name: String
+    }
+
+    type SmartRecruitersIndustry implements Node {
+      id: ID!
+      label: String
+    }
+
+    type SmartRecruitersDepartment implements Node {
+      id: ID!
+      label: String
+      description: String
+    }
+
+    type SmartRecruitersFunction implements Node {
+      id: ID!
+      label: String
+    }
+
+    type SmartRecruitersExperienceLevel implements Node {
+      id: ID!
+      label: String
+    }
+
+    type SmartRecruitersTypeOfEmployment implements Node {
+      label: String
+    }
+
+    type SmartRecruitersLocation implements Node {
+      id: ID!
+      country: String
+      region: String
+      city: String
+      remote: Boolean
+      address: String
+      postalCode: String
+    }
+  `)
+}
+
+// vim: set sw=2 ts=2 :
