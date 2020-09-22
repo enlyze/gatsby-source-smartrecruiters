@@ -4,29 +4,41 @@ import { JobPostNode, DepartmentNode } from './nodes'
 
 /**
  * Return all open jobs for a given department
- * @param apiToken string.
+ * @param companyIdentifier string.
  * @param departmentId string.
+ * @param fetchDetails boolean.
  */
-async function getJobsForDepartment(companyIdentifier, departmentId) {
+async function getJobsForDepartment(companyIdentifier, departmentId, fetchDetails) {
   return getJobPosts(companyIdentifier, {
     department: departmentId
-  })
+  }, fetchDetails)
 }
 
 /**
  * Return all job posts
- * @param apiToken string.
+ * @param companyIdentifier string.
  * @param queryParams object, defaults to only live job posts
+ * @param fetchDetails boolean.
  */
-async function getJobPosts(companyIdentifier, queryParams = {}) {
-  return axios.get(`https://api.smartrecruiters.com/v1/companies/${companyIdentifier}/postings`, {
-    params: queryParams
-  })
+async function getJobPosts(companyIdentifier, queryParams = {}, fetchDetails) {
+  let jobs = await axios.get(`https://api.smartrecruiters.com/v1/companies/${companyIdentifier}/postings`, {
+      params: queryParams
+    })
+
+  if(fetchDetails) {
+    jobs.data.content = (await Promise.all(jobs.data.content.map(job => {
+      return axios.get(job.ref)
+    }))).map(res => {
+      return res.data
+    })
+  }
+
+  return jobs
 }
 
 /**
  * Gets all departments for a given organization
- * @param apiToken string.
+ * @param companyIdentifier string.
  */
 async function getDepartments(companyIdentifier) {
   return axios.get(`https://api.smartrecruiters.com/v1/companies/${companyIdentifier}/departments`)
@@ -44,8 +56,8 @@ const changeId = obj => {
   return updatedObj
 }
 
-exports.sourceNodes = async ({ boundActionCreators }, { companyIdentifier, pluginOptions }) => {
-  const { createNode } = boundActionCreators
+exports.sourceNodes = async ({ actions }, { companyIdentifier, pluginOptions, fetchDetails}) => {
+  const { createNode } = actions
   const options = pluginOptions || {}
 
   console.log(`Starting to fetch data from Smart Recruiters`)
@@ -53,7 +65,7 @@ exports.sourceNodes = async ({ boundActionCreators }, { companyIdentifier, plugi
   let departments, jobPosts
   try {
     departments = await getDepartments(companyIdentifier).then(response => response.data.content)
-    jobPosts = await getJobPosts(companyIdentifier, options.jobPosts).then(response => response.data.content)
+    jobPosts = await getJobPosts(companyIdentifier, options.jobPosts, fetchDetails).then(response => response.data.content)
   } catch (e) {
     console.log(`Failed to fetch data from Smart Recruiters`)
     process.exit(1)
@@ -67,7 +79,7 @@ exports.sourceNodes = async ({ boundActionCreators }, { companyIdentifier, plugi
 
       let jobs
       try {
-        const jobsForDepartmentResults = await getJobsForDepartment(companyIdentifier, convertedDepartment.id)
+        const jobsForDepartmentResults = await getJobsForDepartment(companyIdentifier, convertedDepartment.id, fetchDetails)
         jobs = jobsForDepartmentResults.data.content.map(job => changeId(job))
       } catch (e) {
         console.log(`Failed to fetch jobs for department.`)
@@ -123,6 +135,8 @@ exports.createSchemaCustomization = ({ actions }) => {
       typeOfEmployment: SmartRecruitersTypeOfEmployment
       location: SmartRecruitersLocation
       slug: String
+      applyUrl: String
+      jobAd: SmartRecruitersJobAd
     }
 
     type SmartRecruitersEmployee implements Node {
@@ -168,6 +182,28 @@ exports.createSchemaCustomization = ({ actions }) => {
       remote: Boolean
       address: String
       postalCode: String
+    }
+
+    type SmartRecruitersJobAd implements Node {
+      sections: SmartRecruitersJobAdSections
+    }
+
+    type SmartRecruitersJobAdSections implements Node {
+      companyDescription: SmartRecruitersJobAdSection
+      jobDescription: SmartRecruitersJobAdSection
+      qualifications: SmartRecruitersJobAdSection
+      additionalInformation: SmartRecruitersJobAdSection
+      videos: SmartRecruitersJobAdVideos
+    }
+
+    type SmartRecruitersJobAdSection implements Node {
+      title: String
+      text: String
+    }
+
+    type SmartRecruitersJobAdVideos implements Node {
+      title: String
+      urls: [String]
     }
   `)
 }

@@ -27,11 +27,14 @@ Edit `gatsby-config.js` to use the plugin:
       resolve: `gatsby-source-smartrecruiters`,
       options: {
         companyIdentifier: `{COMPANY_IDENTIFIER}`,
+        fetchDetailed: true,
       },
     },
   ]
 }
 ```
+
+When the option `fetchDetailed` is set to `true`, the plugin will resolve and fetch the detailed job postings individually, which include the application link and contents of the job ad.
 
 ## Querying
 
