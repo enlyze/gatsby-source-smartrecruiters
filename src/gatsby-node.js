@@ -117,7 +117,7 @@ exports.createSchemaCustomization = ({ actions }) => {
       creator: SmartRecruitersEmployee
       company: SmartRecruitersCompany
       industry: SmartRecruitersIndustry
-      departent: SmartRecruitersDepartment
+      department: SmartRecruitersDepartment
       function: SmartRecruitersFunction
       experienceLevel: SmartRecruitersExperienceLevel
       typeOfEmployment: SmartRecruitersTypeOfEmployment
