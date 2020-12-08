@@ -22,8 +22,8 @@ async function getJobsForDepartment(companyIdentifier, departmentId, fetchDetail
  */
 async function getJobPosts(companyIdentifier, queryParams = {}, fetchDetails) {
   let jobs = await axios.get(`https://api.smartrecruiters.com/v1/companies/${companyIdentifier}/postings`, {
-      params: queryParams
-    })
+    params: queryParams
+  })
 
   if(fetchDetails) {
     jobs.data.content = (await Promise.all(jobs.data.content.map(job => {
@@ -119,12 +119,12 @@ exports.createSchemaCustomization = ({ actions }) => {
   const { createTypes } = actions;
 
   createTypes(`
-    type SmartRecruitersJobPost implements Node {
+      type SmartRecruitersJobPost implements Node {
       id: ID!
       uuid: String
       name: String
       refNumber: String
-      releasedDate: Date
+      releasedDate: Date @dateformat
       ref: String
       creator: SmartRecruitersEmployee
       company: SmartRecruitersCompany
@@ -138,42 +138,36 @@ exports.createSchemaCustomization = ({ actions }) => {
       applyUrl: String
       jobAd: SmartRecruitersJobAd
     }
-
     type SmartRecruitersEmployee implements Node {
       name: String
       avatarUrl: String
     }
-
     type SmartRecruitersCompany implements Node {
       id: ID!
       name: String
     }
-
     type SmartRecruitersIndustry implements Node {
       id: ID!
       label: String
     }
-
     type SmartRecruitersDepartment implements Node {
       id: ID!
       label: String
       description: String
+      jobPosts: [SmartRecruitersJobPost]
+      slug: String
     }
-
     type SmartRecruitersFunction implements Node {
       id: ID!
       label: String
     }
-
     type SmartRecruitersExperienceLevel implements Node {
       id: ID!
       label: String
     }
-
     type SmartRecruitersTypeOfEmployment implements Node {
       label: String
     }
-
     type SmartRecruitersLocation implements Node {
       id: ID!
       country: String
@@ -183,11 +177,9 @@ exports.createSchemaCustomization = ({ actions }) => {
       address: String
       postalCode: String
     }
-
     type SmartRecruitersJobAd implements Node {
       sections: SmartRecruitersJobAdSections
     }
-
     type SmartRecruitersJobAdSections implements Node {
       companyDescription: SmartRecruitersJobAdSection
       jobDescription: SmartRecruitersJobAdSection
@@ -195,12 +187,10 @@ exports.createSchemaCustomization = ({ actions }) => {
       additionalInformation: SmartRecruitersJobAdSection
       videos: SmartRecruitersJobAdVideos
     }
-
     type SmartRecruitersJobAdSection implements Node {
       title: String
       text: String
     }
-
     type SmartRecruitersJobAdVideos implements Node {
       title: String
       urls: [String]
